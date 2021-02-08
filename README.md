@@ -22,15 +22,16 @@ This script creates a report of the audit based on orgSecurityScore or for each 
 ## Info
 While i was working with Jamf's CIS Benchmark, Script and Configuration Profile Remediation tool ), I had the feeling there was missing a overview with compleet reporting. You can find some info by the device record in Jamf, however this was only for the Non-compliant items.
 
-The security report creates a compleet reporting overview of the CIS Security State of your device. This report does only reporting on the state, and doesn't change anything on the device. The result is a .csv file, including a remediation instructions. 
+The `4_Security_Report.sh` script creates a compleet reporting overview of the CIS Security State of your device. This report does only reporting on the state, and doesn't change anything on the device. The result is a .csv file, including a remediation instructions. 
 
 ## Usage/Requirements
-***Script must be run as root, or have root privileges***
 
 * This script is tested on macOS Big Sur 11.*
+* Make sure that the script has the correct permissions `chmod +x 4_Security_Report.sh`
 * Reporting document will be stored in the folder "Reports" at the same location as the script.
 * When the script is done, the report will be opend in Numbers, Microsoft Excel or other prefered text editor of your choice.
 
+***Script must be run as root, or have root privileges*** `sudo ./Security_Report.sh`
 
 ### Reporting all or use organizational compliance scoring
 
