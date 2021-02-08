@@ -16,7 +16,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 ![GitHub](https://img.shields.io/github/license/mvdbent/CIS-Reporting)
 
-##DESCRIPTION
+## DESCRIPTION
 This script creates a report of the audit based on orgSecurityScore or for each listed item in the CIS Benchmark script of Jamf's CIS Benchmark, Script and Configuration Profile Remediation tool [here](https://github.com/jamf/CIS-for-macOS-Catalina-CP)
 
 ## Info
