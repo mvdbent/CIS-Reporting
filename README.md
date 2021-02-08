@@ -41,4 +41,4 @@ Build-in option, the option to choose orgSecurityScore (0) or for reporting all 
 orgSecurityScore=0
 ```
 ### Example
-<img src="https://github.com/mvdbent/CIS-Reporting/Scoring.png" width="250">
+<img src="https://github.com/mvdbent/CIS-Reporting/blob/main/Scoring.png" width="250">
