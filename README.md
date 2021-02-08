@@ -41,4 +41,7 @@ Build-in option, the option to choose orgSecurityScore (0) or for reporting all 
 orgSecurityScore=0
 ```
 ### Example
+included an example report [here](https://github.com/mvdbent/CIS-Reporting/blob/main/Example-Report.numbers), in this example I added a chart for a graphics visualisation of the scoring.
+
+Example:  
 <img src="https://github.com/mvdbent/CIS-Reporting/blob/main/Scoring.png" width="770">
