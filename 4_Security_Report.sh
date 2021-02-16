@@ -652,7 +652,7 @@ remediate="Script > /bin/launchctl disable system/com.openssh.sshd"
 runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
-	screenSharing=$(systemsetup -getremotelogin | grep -c "Remote Login: Off")
+	screenSharing=$(systemsetup -getremotelogin | grep -c 'Remote Login: Off')
 #	screenSharing=$(launchctl print-disabled system | grep -c '"com.openssh.sshd" => true')
 	if [[ "$screenSharing" == "1" ]]; then
 		result="Passed"
@@ -1442,9 +1442,9 @@ runAudit
 # If organizational scorse is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /usr/bin/sed -i.bak '/^flags/ s/$/,-ex/' /etc/security/audit_control /usr/sbin/audit -s"
+	remediate="Script > add 'expire-after:60d OR 1G' to /etc/security/audit_control"
 
-	auditRetention="$(grep -c "^flags.*-ex" /etc/security/audit_control)"	
+	auditRetention="$(grep -c expire-after /etc/security/audit_control)"	
 	if [[  "${auditRetention}" == "1" ]]; then
 		result="Passed"
 		comment="Security auditing retention: Configured"
@@ -1466,9 +1466,6 @@ if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
 	remediate="Script > /usr/sbin/chown -R root $(/usr/bin/grep '^dir' /etc/security/audit_control | /usr/bin/awk -F: '{print $2}')"
 
-#	etccheck=$(ls -le /etc/security/audit_control 2>&1 | grep '\-r--------  1 root  wheel')
-#	varcheck=$(ls -le /var/audit 2>&1 | grep -v '\-r--r-----  1 root  wheel\ | current\ | total')
-#	if [[ "${etccheck}" = "" ]] && [[ "${varcheck}" = "" ]]; then
 	controlAccess=$(grep '^dir' /etc/security/audit_control | awk -F: '{print $2}')
 	accessCheck=$(ls -n ${controlAccess} | awk '{s+=$3} END {print s}')
 	if [[ "${accessCheck}" == "0" ]]; then
@@ -1490,9 +1487,9 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > mv /etc/asl/com.apple.install /etc/asl/com.apple.install.old && sed '$s/$/ ttl=365/' /etc/asl/com.apple.install.old > /etc/asl/com.apple.install && chmod 644 /etc/asl/com.apple.install && chown root:wheel /etc/asl/com.apple.install"
+	remediate="Script > add 'ttl=365' to /etc/asl/com.apple.install"
 
-	installRetention="$(cat /etc/asl/com.apple.install 2>&1 | grep -c ttl=365)"
+	installRetention="$(grep -c ttl=365 /etc/asl/com.apple.install)"
 	if [[ "${installRetention}" = "1" ]]; then
 		result="Passed"
 		comment="Retain install.log: 365 or more days"
@@ -1737,10 +1734,9 @@ emptyVariables
 runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
-	method="Script"
-	remediate="Script > echo 'Defaults timestamp_timeout=0' >> /etc/sudoers"
+	remediate="Script > add 'Defaults timestamp_timeout=0' to /etc/sudoers"
 
-	sudoTimeout="$(cat /etc/sudoers 2>&1 | grep -c timestamp)"
+	sudoTimeout="$(ls /etc/sudoers.d/ 2>&1 | grep -c timestamp )"
 	if [[ "${sudoTimeout}" != "0" ]]; then
 		result="Passed"
 		comment="The sudo timeout period is reduced: "${sudoTimeout}""
@@ -1762,7 +1758,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
 	remediate="Script > sed -i '.old' '/Default !tty_tickets/d' /etc/sudoers && chmod 644 /etc/sudoers && chown root:wheel /etc/sudoers"
 
-	ttyTimestamp="$(cat /etc/sudoers 2>&1 | grep -c tty_tickets)"
+	ttyTimestamp="$(grep -c tty_tickets /etc/sudoers)"
 	if [[ "${ttyTimestamp}" == "0" ]]; then
 		result="Passed"
 		comment="Separate timestamp for each user/tty combo: Enabled"
@@ -1946,7 +1942,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
 	remediate="Script > /usr/bin/security authorizationdb read system.preferences > /tmp/system.preferences.plist && /usr/libexec/PlistBuddy -c 'Set :shared false' /tmp/system.preferences.plist && /usr/bin/security authorizationdb write system.preferences < /tmp/system.preferences.plist"
 
-	adminSysPrefs="$(security authorizationdb read system.preferences 2> /dev/null | grep -A1 shared | grep -E '(true|false)' | grep -c "true")"
+	adminSysPrefs="$(security authorizationdb read system.preferences 2> /dev/null | grep -A 1 "<key>shared</key>" | grep -c "<false/>")"
 	if [[ "${adminSysPrefs}" == "1" ]]; then
 		result="Passed"
 		comment="Require an administrator password to access system-wide preferences: Enabled"
