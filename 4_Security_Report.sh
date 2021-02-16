@@ -337,10 +337,10 @@ if [[ "${auditResult}" == "1" ]]; then
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
 	connectable=$(system_profiler SPBluetoothDataType 2>&1 | grep -c Connectable)
 	comment="Paired Devices: ${connectable}"
-	if [[ "${prefIsManaged}" == "True" &&  "${prefValue}" == "0" ]]; then
+	if [[ "${prefIsManaged}" == "True" &&  "${prefValue}" == "True" ]]; then
 		result="Passed"
 	else
-		if [[ "${prefValue}" == "0" ]]; then
+		if [[ "${prefValue}" == "True" ]]; then
 			result="Passed"
 		else
 			if [[ "${connectable}" != "0" ]]; then
@@ -652,7 +652,8 @@ remediate="Script > /bin/launchctl disable system/com.openssh.sshd"
 runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
-	screenSharing=$(launchctl print-disabled system | grep -c '"com.openssh.sshd" => true')
+	screenSharing=$(systemsetup -getremotelogin | grep -c "Remote Login: Off")
+#	screenSharing=$(launchctl print-disabled system | grep -c '"com.openssh.sshd" => true')
 	if [[ "$screenSharing" == "1" ]]; then
 		result="Passed"
 		comment="Remote Login: Disabled"
@@ -1306,10 +1307,10 @@ if [[ "${auditResult}" == "1" ]]; then
 	prefValue=$(getPrefValue "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
 	comment="Secure Keyboard Entry in terminal.app: Enabled"
-	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "True" ]]; then
+	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "true" ]]; then
 		result="Passed"
 	else
-		if [[ "${prefValue}" == "True" ]]; then
+		if [[ "${prefValue}" == "true" ]]; then
 			result="Passed"
 		else
 			result="Failed"
@@ -1546,10 +1547,10 @@ if [[ "${auditResult}" == "1" ]]; then
 	prefValue=$(getPrefValue "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
 	comment="Bonjour advertising service: Disable"
-	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "True" ]]; then
+	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "true" ]]; then
 		result="Passed"
 	else
-		if [[ "${prefValue}" == "True" ]]; then
+		if [[ "${prefValue}" == "true" ]]; then
 			result="Passed"
 		else
 			result="Failed"
@@ -1996,10 +1997,10 @@ if [[ "${auditResult}" == "1" ]]; then
 	prefValueAsUser=$(getPrefValuerunAsUser "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
 	comment="Custom message for the Login Screen: Enabled"
-	if [[ "${prefIsManaged}" == "True" && "${prefValueAsUser}" == "true" ]]; then
+	if [[ "${prefIsManaged}" == "True" && "${prefValueAsUser}" != "" ]]; then
 		result="Passed"
 	else
-		if [[ "${prefValueAsUser}" == "true" ]]
+		if [[ "${prefValueAsUser}" != "" ]]
 		then
 			result="Passed"
 		else
@@ -2043,7 +2044,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	method="Profile"
 	remediate="Configuration profile - payload > .GlobalPreferences > MultipleSessionEnabled=false"
 
-	appidentifier="GlobalPreferences"
+	appidentifier=".GlobalPreferences"
 	value="MultipleSessionEnabled"
 	prefValueAsUser=$(getPrefValuerunAsUser "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
@@ -2235,7 +2236,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	method="Profile"
 	remediate="Configuration profile - payload > .GlobalPreferences > AppleShowAllExtensions=true"
 
-	appidentifier="GlobalPreferences"
+	appidentifier=".GlobalPreferences"
 	value="AppleShowAllExtensions"
 	prefValue=$(getPrefValuerunAsUser "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
