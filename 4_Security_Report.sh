@@ -52,7 +52,7 @@ function runAudit () {
 			echo "No scoring file present"
 			echo "*** Quitting..."
 			echo ""
-			#			exit 0
+			exit 0
 		else
 			auditResult=$(defaults read "${plistlocation}" "${orgScore}" 2>&1)
 			if [[ "${auditResult}" == "1" ]]; then
@@ -148,11 +148,11 @@ echo "Audit Number;Level;Scored;Result;Managed;Preference domain;Option;Value;Me
 #printChapter "Install Updates, Patches and Additional Security Software"
 
 CISLevel="1"
-audit="1.1 - Verify all Apple provided software is current"
+audit="1.1 Verify all Apple-provided software is current (Automated)"
 orgScore="OrgScore1_1"
 emptyVariables
 method="Script"
-remediate="Script > /usr/sbin/softwareupdate --install --restart --recommended"
+remediate="Script > sudo /usr/sbin/softwareupdate --install --restart --recommended"
 # Verify organizational score
 runAudit
 # If organizational score is 1 or true, check status of client
@@ -169,7 +169,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="1.2 - Enable Auto Update"
+audit="1.2 Enable Auto Update (Automated)"
 orgScore="OrgScore1_2"
 emptyVariables
 # Verify organizational score
@@ -199,7 +199,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="1.3 - Enable Download new updates when available"
+audit="1.3 Enable Download new updates when available (Automated)"
 orgScore="OrgScore1_3"
 emptyVariables
 # Verify organizational score
@@ -228,7 +228,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="1.4 - Enable app updates"
+audit="1.4 Enable app update installs (Automated)"
 orgScore="OrgScore1_4"
 emptyVariables
 # Verify organizational score
@@ -257,7 +257,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="1.5 - Enable system data files and security update installs"
+audit="1.5 Enable system data files and security updates install (Automated)"
 orgScore="OrgScore1_5"
 emptyVariables
 # Verify organizational score
@@ -265,17 +265,19 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Profile"
-	remediate="Configuration profile - payload > com.apple.SoftwareUpdate > CriticalUpdateInstall=true)"
+	remediate="Configuration profile - payload > com.apple.SoftwareUpdate > ConfigDataInstall=true - CriticalUpdateInstall=true "
 
 	appidentifier="com.apple.SoftwareUpdate"
-	value="CriticalUpdateInstall"
+	value="ConfigDataInstall"
+	value2="CriticalUpdateInstall"
 	prefValue=$(getPrefValue "${appidentifier}" "${value}")
+	prefValue2=$(getPrefValue "${appidentifier}" "${value2}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
 	comment="System data files and security update installs: Enabled"
-	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "True" ]]; then
+	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "True" && "${prefValue2}" == "True" ]]; then
 		result="Passed"
 	else
-		if [[ "${prefValue}" == "True" ]]; then
+		if [[ "${prefValue}" == "True" && "${prefValue2}" == "True" ]]; then
 			result="Passed"
 		else
 			result="Failed"
@@ -286,7 +288,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="1.6 - Enable macOS update installs"
+audit="1.6 Enable macOS update installs (Automated)"
 orgScore="OrgScore1_6"
 emptyVariables
 # Verify organizational score
@@ -321,7 +323,7 @@ printReport
 #printChapter "System Preferences"
 
 CISLevel="1"
-audit="2.1.1 - Turn off Bluetooth, if no paired devices exist"
+audit="2.1.1 Turn off Bluetooth, if no paired devices exist (Automated)"
 orgScore="OrgScore2_1_1"
 emptyVariables
 # Verify organizational score
@@ -355,15 +357,16 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.1.3 - Show Bluetooth status in menu bar"
-orgScore="OrgScore2_1_3"
+audit="2.1.2 Show Bluetooth status in menu bar (Automated)"
+orgScore="OrgScore2_1_2"
 emptyVariables
 # Verify organizational score
 runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
-	method="Profile/Script?"
-	
+	method="Script"
+	remediate="Script > sudo -u firstuser defaults -currentHost write com.apple.controlcenter.plist Bluetooth -int 18"
+
 	appidentifier="com.apple.controlcenter"
 	value="NSStatusItem Visible Bluetooth"
 	prefValueAsUser=$(getPrefValuerunAsUser "${appidentifier}" "${value}")
@@ -384,7 +387,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.2.1 - Enable 'Set time and date automatically' (Not Scored)"
+audit='2.2.1 Enable "Set time and date automatically" (Automated)'
 orgScore="OrgScore2_2_1"
 emptyVariables
 # Verify organizational score
@@ -418,7 +421,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.2.2 - Ensure time set is within appropriate limits"
+audit="2.2.2 Ensure time set is within appropriate limits (Automated)"
 orgScore="OrgScore2_2_2"
 emptyVariables
 # Verify organizational score
@@ -426,7 +429,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /usr/sbin/systemsetup -setusingnetworktime on && /usr/sbin/systemsetup -setnetworktimeserver time.euro.apple.com"
+	remediate="Script > sudo /usr/sbin/systemsetup -setusingnetworktime on && sudo /usr/sbin/systemsetup -setnetworktimeserver time.euro.apple.com"
 
 	networkTimeserver=$(systemsetup -getnetworktimeserver 2>&1 | grep -c 'Network Time Server')
 	printCLIResult=$(systemsetup -getnetworktimeserver)
@@ -441,7 +444,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.3.1 - Set an inactivity interval of 20 minutes or less for the screen saver"
+audit="2.3.1 Set an inactivity interval of 20 minutes or less for the screen saver (Automated)"
 orgScore="OrgScore2_3_1"
 emptyVariables
 # Verify organizational score
@@ -470,7 +473,7 @@ fi
 printReport
 
 CISLevel="2"
-audit="2.3.2 - Secure screen saver corners"
+audit="2.3.2 Secure screen saver corners (Automated)"
 orgScore="OrgScore2_3_2"
 emptyVariables
 # Verify organizational score
@@ -513,7 +516,7 @@ prefValue="${prefValueAsUser}, ${prefValue2AsUser}, ${prefValue3AsUser}, ${prefV
 printReport 
 
 CISLevel="1"
-audit="2.3.3 - Familiarise users with screen lock tools or corner to Start Screen Saver"
+audit="2.3.3 Familiarize users with screen lock tools or corner to Start Screen Saver (Manual)"
 orgScore="OrgScore2_3_3"
 emptyVariables
 # Verify organizational score
@@ -549,7 +552,7 @@ prefValue=""
 printReport 
 
 CISLevel="1"
-audit="2.4.1 - Disable Remote Apple Events"
+audit="2.4.1 Disable Remote Apple Events (Automated)"
 orgScore="OrgScore2_4_1"
 emptyVariables
 # Verify organizational score
@@ -557,7 +560,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /usr/sbin/systemsetup -setremoteappleevents off && /bin/launchctl disable system/com.apple.AEServer"
+	remediate="Script > sudo /usr/sbin/systemsetup -setremoteappleevents off && sudo launchctl disable system/com.apple.AEServer"
 
 	remoteAppleEvents=$(systemsetup -getremoteappleevents)
 	if [[ "$remoteAppleEvents" == "Remote Apple Events: Off" ]]; then
@@ -571,7 +574,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.4.2 - Disable Internet Sharing"
+audit="2.4.2 Disable Internet Sharing (Automated)"
 orgScore="OrgScore2_4_2"
 emptyVariables
 # Verify organizational score
@@ -599,7 +602,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.4.3 - Disable Screen Sharing"
+audit="2.4.3 Disable Screen Sharing (Automated)"
 orgScore="OrgScore2_4_3"
 emptyVariables
 # Verify organizational score
@@ -607,7 +610,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /bin/launchctl disable system/com.apple.screensharing"
+	remediate="Script > sudo launchctl disable system/com.apple.screensharing"
 
 	screenSharing=$(launchctl print-disabled system | grep -c '"com.apple.screensharing" => true')
 	if [[ "$screenSharing" == "1" ]]; then
@@ -621,7 +624,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.4.4 - Disable Printer Sharing"
+audit="2.4.4 Disable Printer Sharing (Automated)"
 orgScore="OrgScore2_4_4"
 emptyVariables
 # Verify organizational score
@@ -629,7 +632,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /usr/sbin/lpadmin -p 'shared-printer' -o printer-is-shared=false"
+	remediate="Script > sudo /usr/sbin/cupsctl --no-share-printers"
 
 	printerSharing=$(cupsctl | grep "share_printers")
 	if [[ "${printerSharing}" == "_share_printers=0" ]]; then
@@ -643,17 +646,16 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.4.5 - Disable Remote Login"
+audit="2.4.5 Disable Remote Login (Automated)"
 orgScore="OrgScore2_4_5"
 emptyVariables
 method="Script"
-remediate="Script > /bin/launchctl disable system/com.openssh.sshd"
+remediate="Script > sudo /usr/sbin/systemsetup -setremotelogin off"
 # Verify organizational score
 runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	screenSharing=$(systemsetup -getremotelogin | grep -c 'Remote Login: Off')
-#	screenSharing=$(launchctl print-disabled system | grep -c '"com.openssh.sshd" => true')
 	if [[ "$screenSharing" == "1" ]]; then
 		result="Passed"
 		comment="Remote Login: Disabled"
@@ -665,7 +667,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.4.6 - Disable DVD or CD Sharing"
+audit="2.4.6 Disable DVD or CD Sharing (Automated)"
 orgScore="OrgScore2_4_6"
 emptyVariables
 # Verify organizational score
@@ -673,7 +675,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /bin/launchctl unload -w /System/Library/LaunchDaemons/com.apple.ODSAgent.plist"
+	remediate="Script > sudo launchctl unload -w /System/Library/LaunchDaemons/com.apple.ODSAgent.plist"
 
 	discSharing=$(launchctl list | grep -Ec ODSAgent)
 	if [[ "${discSharing}" == "0" ]]; then
@@ -687,7 +689,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.4.7 - Disable Bluetooth Sharing"
+audit="2.4.7 Disable Bluetooth Sharing (Automated)"
 orgScore="OrgScore2_4_7"
 emptyVariables
 # Verify organizational score
@@ -695,7 +697,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /usr/bin/sudo -u 'CURRENT_USER' /usr/bin/defaults -currentHost write com.apple.Bluetooth PrefKeyServicesEnabled -bool false"
+	remediate="Script > sudo -u 'CURRENT_USER' defaults -currentHost write com.apple.Bluetooth PrefKeyServicesEnabled -bool false"
 
 	appidentifier="com.apple.Bluetooth"
 	value="PrefKeyServicesEnabled"
@@ -716,7 +718,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.4.8 - Disable File Sharing"
+audit="2.4.8 Disable File Sharing (Automated)"
 orgScore="OrgScore2_4_8"
 emptyVariables
 # Verify organizational score
@@ -724,7 +726,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /bin/launchctl disable system/com.apple.smbd"
+	remediate="Script > sudo launchctl disable system/com.apple.smbd"
 
 	smbEnabled=$(launchctl print-disabled system | grep -c '"com.apple.smbd" => true')
 	if [[ "${smbEnabled}" == "1" ]]; then
@@ -739,7 +741,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.4.9 - Disable Remote Management"
+audit="2.4.9 Disable Remote Management (Automated)"
 orgScore="OrgScore2_4_9"
 emptyVariables
 # Verify organizational score
@@ -747,7 +749,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -deactivate -stop"
+	remediate="Script > sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -deactivate -stop"
 
 	screenSharing=$(runAsUser launchctl list | grep com.apple.RemoteDesktop.agent | awk '{ print $1 }')
 	if [[ "$screenSharing" == "-" ]]; then
@@ -761,7 +763,7 @@ fi
 printReport
 
 CISLevel="2"
-audit="2.4.10 - Disable Content Caching"
+audit="2.4.10 Disable Content Caching (Automated)"
 orgScore="OrgScore2_4_10"
 emptyVariables
 # Verify organizational score
@@ -795,7 +797,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.4.11 - Disable Media Sharing"
+audit="2.4.11 Disable Media Sharing (Automated)"
 orgScore="OrgScore2_4_11"
 emptyVariables
 # Verify organizational score
@@ -831,7 +833,7 @@ prefValue="${prefValueAsUser}, ${prefValue2AsUser}"
 printReport 
 
 CISLevel="1"
-audit="2.5.1.1 - Enable FileVault"
+audit="2.5.1.1 Enable FileVault (Automated)"
 orgScore="OrgScore2_5_1_1"
 emptyVariables
 # Verify organizational score
@@ -865,7 +867,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.5.1.2 - Ensure all user storage APFS Volumes are encrypted"
+audit="2.5.1.2 Ensure all user storage APFS volumes are encrypted (Manual)"
 orgScore="OrgScore2_5_1_2"
 emptyVariables
 # Verify organizational score
@@ -890,7 +892,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.5.1.3 - Ensure all user storage CoreStorage Volumes are encrypted"
+audit="2.5.1.3 Ensure all user storage CoreStorage volumes are encrypted (Manual)"
 orgScore="OrgScore2_5_1_3"
 emptyVariables
 # Verify organizational score
@@ -918,8 +920,8 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.5.2 - Enable Gatekeeper"
-orgScore="OrgScore2_5_2"
+audit="2.5.2.1 Enable Gatekeeper (Automated)"
+orgScore="OrgScore2_5_2_1"
 emptyVariables
 # Verify organizational score
 runAudit
@@ -952,8 +954,8 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.5.3 - Enable Firewall"
-orgScore="OrgScore2_5_3"
+audit="2.5.2.2 Enable Firewall (Automated)"
+orgScore="OrgScore2_5_2_2"
 emptyVariables
 # Verify organizational score
 runAudit
@@ -981,8 +983,8 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.5.4 - Enable Firewall Stealth Mode"
-orgScore="OrgScore2_5_4"
+audit="2.5.2.3 Enable Firewall Stealth Mode (Automated)"
+orgScore="OrgScore2_5_2_3"
 emptyVariables
 # Verify organizational score
 runAudit
@@ -1014,8 +1016,8 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.5.5 - Review Application Firewall Rules"
-orgScore="OrgScore2_5_5"
+audit="2.5.3 Review Application Firewall Rules (Manual)"
+orgScore="OrgScore2_5_3"
 emptyVariables
 # Verify organizational score
 runAudit
@@ -1036,8 +1038,52 @@ fi
 printReport
 
 CISLevel="2"
-audit="2.5.8 - Disable sending diagnostic and usage data to Apple"
-orgScore="OrgScore2_5_8"
+audit="2.5.4 Enable Location Services (Automated)"
+orgScore="OrgScore2_5_4"
+emptyVariables
+# Verify organizational score
+runAudit
+# If organizational score is 1 or true, check status of client
+if [[ "${auditResult}" == "1" ]]; then
+	method="Script"
+	remediate="Script > sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.locationd.plist"
+	
+	locationServices=$(launchctl print-disabled system 2>&1 | grep -c '"com.apple.locationd" => true')
+	if [[ "${locationServices}" != "0" ]]; then
+		result="Passed"
+		comment="Location Services: Enabled"
+	else 
+		result="Failed"
+		comment="Location Services: Disabled"
+	fi
+fi
+printReport
+
+CISLevel="2"
+audit="2.5.5 Monitor Location Services Access (Manual)"
+orgScore="OrgScore2_5_5"
+emptyVariables
+# Verify organizational score
+runAudit
+# If organizational score is 1 or true, check status of client
+if [[ "${auditResult}" == "1" ]]; then
+	method="Manual"
+	remediate="Disable unnecessary applications from accessing location services"
+	
+	locationServices=$(defaults read /var/db/locationd/clients.plist 2>&1 | grep -c "Authorized")
+	if [[ "${locationServices}" != "0" ]]; then
+		result="Failed"
+		comment="${locationServices} applications can accessing location services"
+	else 
+		result="Passed"
+		comment="No Location Services Access"
+	fi
+fi
+printReport
+
+CISLevel="2"
+audit="2.5.6 Disable sending diagnostic and usage data to Apple (Automated)"
+orgScore="OrgScore2_5_6"
 emptyVariables
 # Verify organizational score
 runAudit
@@ -1056,8 +1102,8 @@ if [[ "${auditResult}" == "1" ]]; then
 		if [[ "${prefValue}" == "False" ]]; then
 			result="Passed"
 		else
-			stealthEnabled=$(defaults read /Library/Application\ Support/CrashReporter/DiagnosticMessagesHistory.plist AutoSubmit)
-			if [[ "$stealthEnabled" == "0" ]]; then
+			diagnosticEnabled=$(defaults read /Library/Application\ Support/CrashReporter/DiagnosticMessagesHistory.plist AutoSubmit)
+			if [[ "${diagnosticEnabled}" == "0" ]]; then
 				result="Passed"
 			else
 				result="Failed"
@@ -1069,8 +1115,8 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.5.9 - Force Limited Ad Tracking (Not Scored)"
-orgScore="OrgScore2_5_9"
+audit="2.5.7 Limit Ad tracking and personalized Ads (Automated)"
+orgScore="OrgScore2_5_7"
 emptyVariables
 # Verify organizational score
 runAudit
@@ -1098,7 +1144,7 @@ fi
 printReport
 
 CISLevel="2"
-audit="2.6.1 - iCloud configuration (Check for iCloud accounts) (Not Scored)"
+audit="2.6.1 iCloud configuration (Manual)"
 orgScore="OrgScore2_6_1"
 emptyVariables
 # Verify organizational score
@@ -1123,7 +1169,7 @@ fi
 printReport
 
 CISLevel="2"
-audit="2.6.2 - Disable iCloud keychain (Not Scored)"
+audit="2.6.2 iCloud keychain (Manual)"
 orgScore="OrgScore2_6_2"
 emptyVariables
 # Verify organizational score
@@ -1152,7 +1198,7 @@ fi
 printReport
 
 CISLevel="2"
-audit="2.6.3 - Disable iCloud Drive (Not Scored)"
+audit="2.6.3 iCloud Drive (Manual)"
 orgScore="OrgScore2_6_3"
 emptyVariables
 # Verify organizational score
@@ -1181,7 +1227,7 @@ fi
 printReport
 
 CISLevel="2"
-audit="2.6.4 - iCloud Drive Document sync"
+audit="2.6.4 iCloud Drive Document and Desktop sync (Manual)"
 orgScore="OrgScore2_6_4"
 emptyVariables
 # Verify organizational score
@@ -1195,7 +1241,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	value="allowCloudDesktopAndDocuments"
 	prefValue=$(getPrefValue "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
-	comment="iCloud Drive Document sync: Disabled"
+	comment="iCloud Drive Document and Desktop sync: Disabled"
 	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "False" ]]; then
 		result="Passed"
 	else
@@ -1203,43 +1249,14 @@ if [[ "${auditResult}" == "1" ]]; then
 			result="Passed"
 		else
 			result="Failed"
-			comment="iCloud Drive Document sync: Enabled"
+			comment="iCloud Drive Document and Desktop sync: Enabled"
 		fi
 	fi
 fi
 printReport
 
 CISLevel="2"
-audit="2.6.5 - iCloud Drive Desktop sync"
-orgScore="OrgScore2_6_5"
-emptyVariables
-# Verify organizational score
-runAudit
-# If organizational score is 1 or true, check status of client
-if [[ "${auditResult}" == "1" ]]; then
-	method="Profile"
-	remediate="Configuration profile - payload > com.apple.applicationaccess > allowCloudDesktopAndDocuments=false"
-
-	appidentifier="com.apple.applicationaccess"
-	value="allowCloudDesktopAndDocuments"
-	prefValue=$(getPrefValue "${appidentifier}" "${value}")
-	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
-	comment="iCloud Drive Desktop sync: Disabled"
-	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "False" ]]; then
-		result="Passed"
-	else
-		if [[ "${prefValue}" == "False" ]]; then
-			result="Passed"
-		else
-			result="Failed"
-			comment="iCloud Drive Desktop sync: Enabled"
-		fi
-	fi
-fi
-printReport
-
-CISLevel="2"
-audit="2.7.1 - Time Machine Auto-Backup"
+audit="2.7.1 Time Machine Auto-Backup (Automated)"
 orgScore="OrgScore2_7_1"
 emptyVariables
 # Verify organizational score
@@ -1247,7 +1264,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > defaults write /Library/Preferences/com.apple.TimeMachine.plist AutoBackup 1"
+	remediate="Script > sudo defaults write /Library/Preferences/com.apple.TimeMachine.plist AutoBackup 1"
 
 	timeMachineAuto=$(defaults read /Library/Preferences/com.apple.TimeMachine.plist AutoBackup 2>&1)
 	if [[ "$timeMachineAuto" != "0" ]]; then
@@ -1261,39 +1278,68 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.8 - Disable infrared or Pair the remote control infrared receiver if enabled"
+audit="2.7.2 Time Machine Volumes Are Encrypted (Automated)"
+orgScore="OrgScore2_7_2"
+# $ tmDestination=$(tmutil destinationinfo)
+# $ sudo diskutil info ${tmDestination} | grep -c "Encrypted Encrypted: Yes"
+
+CISLevel="1"
+audit="2.8 Disable Wake for network access (Automated)"
 orgScore="OrgScore2_8"
 emptyVariables
 # Verify organizational score
 runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
-	method="Profile"
-	remediate="Configuration profile - payload > com.apple.driver.AppleIRController > DeviceEnabled=false"
-
-	appidentifier="com.apple.driver.AppleIRController"
-	value="DeviceEnabled"
-	prefValue=$(getPrefValue "${appidentifier}" "${value}")
+	method="Profile/Script"
+	remediate="Configuration profile - Energy Saver > 'Desktop', 'Portable - Battery' and 'Portable - Power Adapter'. Disable Power Nap - Script > sudo /usr/bin/pmset -a womp 0"
+	
+	appidentifier="com.apple.PowerManagement"
+	value="AC Power"
+	nestedValue="Wake On LAN"
+	prefValue=$(getPrefValueNested "${appidentifier}" "${value}" "${nestedValue}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
-	comment="Infrared receiver: Disabled"
-#	IRPortDetect=$(system_profiler SPUSBDataType 2>&1 | grep -c "IR Receiver")
-#	if [[ "${IRPortDetect}" == "0" ]]; then
-	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "False" ]]; then
+	comment="Wake for network access: Disabled"
+	wakeNetwork=$(pmset -g | awk '/womp/ { sum+=$2 } END {print sum}')
+	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "0" && "${wakeNetwork}" == "0" ]]; then
 		result="Passed"
 	else
-		if [[ "${prefValue}" == "False" ]]; then
+		if [[ "${prefValue}" == "0" && "${wakeNetwork}" == "0"  ]]; then
 			result="Passed"
 		else
 			result="Failed"
-			comment="Infrared receiver: Enabled"
+			comment="Wake for network access: Enabled"
 		fi
 	fi
 fi
 printReport
 
 CISLevel="1"
-audit="2.9 - Enable Secure Keyboard Entry in terminal.app"
+audit="2.9 Disable Power Nap (Automated)"
 orgScore="OrgScore2_9"
+emptyVariables
+# Verify organizational score
+runAudit
+# If organizational score is 1 or true, check status of client
+if [[ "${auditResult}" == "1" ]]; then
+	method="Script"
+	remediate="Script > sudo /usr/bin/pmset -a powernap 0"
+	
+	powerNap=$(pmset -g custom | awk '/powernap/ { sum+=$2 } END {print sum}')
+	if [[ "${powerNap}" == "0" ]]; then
+		result="Passed"
+		comment="Power Nap: Enabled"
+	else 
+		result="Failed"
+		comment="Power Nap: Disabled"
+	fi
+fi
+
+printReport
+
+CISLevel="1"
+audit="2.10 Enable Secure Keyboard Entry in terminal.app (Automated)"
+orgScore="OrgScore2_10"
 emptyVariables
 # Verify organizational score
 runAudit
@@ -1321,7 +1367,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="2.11 - Ensure EFI version is valid and being regularly checked"
+audit="2.11 Ensure EFI version is valid and being regularly checked (Automated)"
 orgScore="OrgScore2_11"
 emptyVariables
 # Verify organizational score
@@ -1335,7 +1381,7 @@ if [[ "${auditResult}" == "1" ]]; then
 		comment="EFI Firmware Integrity is not supported by this Mac. T2 Chip found."
 	else
 		method="Script"
-		remediate="Script > /usr/libexec/firmwarecheckers/eficheck/eficheck --integrity-check"
+		remediate="Script > sudo /usr/libexec/firmwarecheckers/eficheck/eficheck --integrity-check"
 		efiStatus=$(/usr/libexec/firmwarecheckers/eficheck/eficheck --integrity-check | grep -c "No changes detected")
 		if [[ "${efiStatus}" -gt 0 ]]; then
 			result="Passed"
@@ -1343,37 +1389,6 @@ if [[ "${auditResult}" == "1" ]]; then
 		else
 			result="Failed"
 			comment="EFI version: Invalid"
-		fi
-	fi
-fi
-printReport
-
-CISLevel="1"
-audit="2.12 - Disable 'Wake for network access' and 'Power Nap'"
-orgScore="OrgScore2_12"
-emptyVariables
-# Verify organizational score
-runAudit
-# If organizational score is 1 or true, check status of client
-if [[ "${auditResult}" == "1" ]]; then
-	method="Profile/Script?"
-	remediate="Configuration profile - Energy Saver > 'Desktop', 'Portable - Battery' and 'Portable - Power Adapter'. Disable Power Nap - Script > /usr/bin/pmset -a powernap 0"
-
-	appidentifier="com.apple.PowerManagement"
-	value="AC Power"
-	nestedValue="Wake On LAN"
-	prefValue=$(getPrefValueNested "${appidentifier}" "${value}" "${nestedValue}")
-	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
-	comment="Wake for network access and Power Nap: Disabled"
-	powerNap=$(pmset -g custom | awk '/powernap/ { sum+=$2 } END {print sum}')
-	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "0" && "${powerNap}" == "0" ]]; then
-		result="Passed"
-	else
-		if [[ "${prefValue}" == "0" && "${powerNap}" == "0"  ]]; then
-			result="Passed"
-		else
-			result="Failed"
-			comment="Wake for network access and Power Nap: Enabled"
 		fi
 	fi
 fi
@@ -1389,7 +1404,7 @@ printReport
 ## 
 
 CISLevel="1"
-audit="3.1 - Enable security auditing"
+audit="3.1 Enable security auditing (Automated)"
 orgScore="OrgScore3_1"
 emptyVariables
 # Verify organizational score
@@ -1397,7 +1412,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /bin/launchctl load -w /System/Library/LaunchDaemons/com.apple.auditd.plist"
+	remediate="Script > sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.auditd.plist"
 
 	auditdEnabled=$(launchctl list 2>&1 | grep -c auditd)
 	if [[ "${auditdEnabled}" -gt "0" ]]; then
@@ -1412,7 +1427,7 @@ printReport
 
 
 CISLevel="2"
-audit="3.2 - Configure Security Auditing Flags"
+audit="3.2 Configure Security Auditing Flags per local organizational requirements (Manual)"
 orgScore="OrgScore3_2"
 emptyVariables
 # Verify organizational score
@@ -1420,7 +1435,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /usr/bin/sed -i.bak '/^flags/ s/$/,ad/' /etc/security/audit_control /usr/sbin/audit -s"
+	remediate="Script > sudo /usr/bin/sed -i.bak '/^flags/ s/$/,ad/' /etc/security/audit_control /usr/sbin/audit -s"
 
 	auditFlags="$(grep -c "^flags:" /etc/security/audit_control)"
 	if [[ "${auditFlags}" == "1" ]]; then
@@ -1434,8 +1449,30 @@ fi
 printReport
 
 CISLevel="1"
-audit="3.3 - Ensure security auditing retention"
+audit="3.3 Retain install.log for 365 or more days with no maximum size (Automated)"
 orgScore="OrgScore3_3"
+emptyVariables
+# Verify organizational score
+runAudit
+# If organizational score is 1 or true, check status of client
+if [[ "${auditResult}" == "1" ]]; then
+	method="Script"
+	remediate="Script > add 'ttl=365' to /etc/asl/com.apple.install"
+	
+	installRetention="$(grep -c ttl=365 /etc/asl/com.apple.install)"
+	if [[ "${installRetention}" = "1" ]]; then
+		result="Passed"
+		comment="Retain install.log: 365 or more days"
+	else 
+		result="Failed"
+		comment="Retain install.log: Less than 365 days"
+	fi
+fi
+printReport
+
+CISLevel="1"
+audit="3.4 Ensure security auditing retention (Automated)"
+orgScore="OrgScore3_4"
 emptyVariables
 # Verify organizational score
 runAudit
@@ -1456,15 +1493,15 @@ fi
 printReport
 
 CISLevel="1"
-audit="3.4 - Control access to audit records"
-orgScore="OrgScore3_4"
+audit="3.5 Control access to audit records (Automated)"
+orgScore="OrgScore3_5"
 emptyVariables
 # Verify organizational score
 runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /usr/sbin/chown -R root $(/usr/bin/grep '^dir' /etc/security/audit_control | /usr/bin/awk -F: '{print $2}')"
+	remediate="Script > sudo chown -R root $(/usr/bin/grep '^dir' /etc/security/audit_control | /usr/bin/awk -F: '{print $2}')"
 
 	controlAccess=$(grep '^dir' /etc/security/audit_control | awk -F: '{print $2}')
 	accessCheck=$(ls -n ${controlAccess} | awk '{s+=$3} END {print s}')
@@ -1479,29 +1516,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="3.5 - Retain install.log for 365 or more days"
-orgScore="OrgScore3_5"
-emptyVariables
-# Verify organizational score
-runAudit
-# If organizational score is 1 or true, check status of client
-if [[ "${auditResult}" == "1" ]]; then
-	method="Script"
-	remediate="Script > add 'ttl=365' to /etc/asl/com.apple.install"
-
-	installRetention="$(grep -c ttl=365 /etc/asl/com.apple.install)"
-	if [[ "${installRetention}" = "1" ]]; then
-		result="Passed"
-		comment="Retain install.log: 365 or more days"
-	else 
-		result="Failed"
-		comment="Retain install.log: Less than 365 days"
-	fi
-fi
-printReport
-
-CISLevel="1"
-audit="3.6 - Ensure Firewall is configured to log"
+audit="3.6 Ensure Firewall is configured to log (Automated)"
 orgScore="OrgScore3_6"
 emptyVariables
 # Verify organizational score
@@ -1509,7 +1524,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /usr/libexec/ApplicationFirewall/socketfilterfw --setloggingmode on"
+	remediate="Script > sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setloggingmode on"
 
 	FWlog=$(/usr/libexec/ApplicationFirewall/socketfilterfw --getloggingmode | grep -c "Log mode is on")
 	if [[ "$FWlog" = "1" ]]; then
@@ -1529,7 +1544,7 @@ printReport
 #printChapter "Network Configurations"
 
 CISLevel="2"
-audit="4.1 - Disable Bonjour advertising service"
+audit="4.1 Disable Bonjour advertising service (Automated)"
 orgScore="OrgScore4_1"
 emptyVariables
 # Verify organizational score
@@ -1559,14 +1574,15 @@ printReport
 
 
 CISLevel="1"
-audit="4.2 - Enable Show Wi-Fi status in menu bar"
+audit='4.2 Enable "Show Wi-Fi status in menu bar" (Automated)'
 orgScore="OrgScore4_2"
 emptyVariables
 # Verify organizational score
 runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
-	method="Profile/Script?"
+	method="Script"
+	remediate="Script > sudo -u <username> defaults -currentHost write com.apple.controlcenter.plist WiFi -int 18"
 	
 	appidentifier="com.apple.controlcenter"
 	value="NSStatusItem Visible WiFi"
@@ -1588,7 +1604,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="4.4 - Ensure HTTP server is not running"
+audit="4.4 Ensure http server is not running (Automated)"
 orgScore="OrgScore4_4"
 emptyVariables
 # Verify organizational score
@@ -1596,9 +1612,10 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > defaults write /System/Library/LaunchDaemons/org.apache.httpd Disabled -bool true"
+	remediate="Script > sudo launchctl disable system/org.apache.httpd"
 
-	httpServer=$(launchctl list 2>&1 | grep -c httpd)
+	httpServer=$(launchctl print-disabled system 2>&1 | grep -c '"org.apache.httpd" => true')
+#	httpServer=$(launchctl list 2>&1 | grep -c httpd)
 	if [[ "${httpServer}" == "0" ]]; then
 		result="Passed"
 		comment="HTTP server service: Disabled"
@@ -1610,7 +1627,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="4.5 - Ensure NFS server service is not running"
+audit="4.5 Ensure nfs server is not running. (Automated)"
 orgScore="OrgScore4_5"
 emptyVariables
 # Verify organizational score
@@ -1618,7 +1635,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script /bin/launchctl disable system/com.apple.nfsd"
+	remediate="Script > sudo launchctl disable system/com.apple.nfsd && sudo rm /etc/exports"
 
 	httpServer=$(launchctl print-disabled system 2>&1 | grep -c '"com.apple.nfsd" => true')
 	if [[ "${httpServer}" == "0" ]]; then
@@ -1638,7 +1655,7 @@ printReport
 #printChapter "System Access, Authentication and Authorization"
 
 CISLevel="1"
-audit="5.1.1 - Secure Home Folders"
+audit="5.1.1 Secure Home Folders (Automated)"
 orgScore="OrgScore5_1_1"
 emptyVariables
 # Verify organizational score
@@ -1646,7 +1663,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > chmod og-rwx 'HomeFolders'"
+	remediate="Script > sudo chmod og-rwx 'HomeFolders'"
 
 	homeFolders="$(find /Users -mindepth 1 -maxdepth 1 -type d -perm -1 2>&1 | grep -v "Shared" | grep -v "Guest" | wc -l | xargs)"
 	if [[ "${homeFolders}" == "0" ]]; then
@@ -1660,7 +1677,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="5.1.2 - Check System Wide Applications for appropriate permissions"
+audit="5.1.2 Check System Wide Applications for appropriate permissions (Automated)"
 orgScore="OrgScore5_1_2"
 emptyVariables
 # Verify organizational score
@@ -1668,7 +1685,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > chmod -R o-w 'Applications'"
+	remediate="Script > sudo chmod -R o-w /Applications/<applicationname>"
 
 	appPermissions="$(find /Applications -iname "*\.app" -type d -perm -2 -ls 2>&1 | wc -l | xargs)"
 	if [[ "${appPermissions}" == "0" ]]; then
@@ -1682,7 +1699,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="5.1.3 - Check System folder for world writable files"
+audit="5.1.3 Check System folder for world writable files (Automated)"
 orgScore="OrgScore5_1_3"
 emptyVariables
 # Verify organizational score
@@ -1690,7 +1707,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > chmod -R o-w 'Systemfolders'"
+	remediate="Script > sudo chmod -R o-w /Path/<baddirectory>"
 
 	sysPermissions="$(find /System/Volumes/Data/System -type d -perm -2 -ls 2>&1 | grep -v "Public/Drop Box" | wc -l | xargs)"
 	if [[ "${sysPermissions}" == "0" ]]; then
@@ -1704,7 +1721,7 @@ fi
 printReport
 
 CISLevel="2"
-audit="5.1.4 - Check Library folder for world writable files"
+audit="5.1.4 Check Library folder for world writable files (Automated)"
 orgScore="OrgScore5_1_4"
 emptyVariables
 # Verify organizational score
@@ -1712,7 +1729,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > chmod -R o-w 'Libraryfolders'"
+	remediate="Script > sudo chmod -R o-w /System/Volumes/Data/Library/<baddirectory>"
 
 	libPermissions="$(find /Library -type d -perm -2 -ls 2>&1 | grep -v Caches | grep -v Adobe | grep -v VMware | grep -v "/Audio/Data" | wc -l | xargs)"
 	if [[ "${libPermissions}" == "0" ]]; then
@@ -1727,7 +1744,7 @@ printReport
 
 
 CISLevel="1"
-audit="5.3 - Reduce the sudo timeout period"
+audit="5.3 Reduce the sudo timeout period (Automated)"
 orgScore="OrgScore5_3"
 emptyVariables
 # Verify organizational score
@@ -1747,8 +1764,8 @@ if [[ "${auditResult}" == "1" ]]; then
 fi
 printReport
 
-CISLevel="1"
-audit="5.4 - Use a separate timestamp for each user/tty combo"
+CISLevel="2"
+audit="5.4 Automatically lock the login keychain for inactivity (Manual)"
 orgScore="OrgScore5_4"
 emptyVariables
 # Verify organizational score
@@ -1756,7 +1773,29 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > sed -i '.old' '/Default !tty_tickets/d' /etc/sudoers && chmod 644 /etc/sudoers && chown root:wheel /etc/sudoers"
+	remediate="Script > sudo -u <username> security set-keychain-settings -t 21600 /Users/<username>/Library/Keychains/login.keychain"
+	
+	keyTimeout="$(security show-keychain-info /Users/"${currentUser}"/Library/Keychains/login.keychain 2>&1 | grep -c "no-timeout")"
+	if [[ "${keyTimeout}" == "1" ]]; then
+		result="Passed"
+		comment="Automatically lock the login keychain for inactivity: Enabled"
+	else 
+		result="Failed"
+		comment="Automatically lock the login keychain for inactivity: Disabled"
+	fi
+fi
+printReport
+
+CISLevel="1"
+audit="5.5 Use a separate timestamp for each user/tty combo (Automated)"
+orgScore="OrgScore5_5"
+emptyVariables
+# Verify organizational score
+runAudit
+# If organizational score is 1 or true, check status of client
+if [[ "${auditResult}" == "1" ]]; then
+	method="Script"
+	remediate="Script > sudo sed -i '.old' '/Default !tty_tickets/d' /etc/sudoers && sudo chmod 644 /etc/sudoers && sudo chown root:wheel /etc/sudoers"
 
 	ttyTimestamp="$(grep -c tty_tickets /etc/sudoers)"
 	if [[ "${ttyTimestamp}" == "0" ]]; then
@@ -1769,31 +1808,8 @@ if [[ "${auditResult}" == "1" ]]; then
 fi
 printReport
 
-
 CISLevel="2"
-audit="5.5 - Automatically lock the login keychain for inactivity"
-orgScore="OrgScore5_5"
-emptyVariables
-# Verify organizational score
-runAudit
-# If organizational score is 1 or true, check status of client
-if [[ "${auditResult}" == "1" ]]; then
-	method="Script"
-	remediate="Script > security set-keychain-settings -u -t 21600s /Users/'User'/Library/Keychains/login.keychain"
-
-	keyTimeout="$(security show-keychain-info /Users/"${currentUser}"/Library/Keychains/login.keychain 2>&1 | grep -c "no-timeout")"
-	if [[ "${keyTimeout}" == "1" ]]; then
-		result="Passed"
-		comment="Automatically lock the login keychain for inactivity: Enabled"
-	else 
-		result="Failed"
-		comment="Automatically lock the login keychain for inactivity: Disabled"
-	fi
-fi
-printReport
-
-CISLevel="2"
-audit="5.6 - Ensure login keychain is locked when the computer sleeps"
+audit="5.6 Ensure login keychain is locked when the computer sleeps (Manual)"
 orgScore="OrgScore5_6"
 emptyVariables
 # Verify organizational score
@@ -1801,7 +1817,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > security set-keychain-settings -l /Users/'User'/Library/Keychains/login.keychain"
+	remediate="Script > sudo -u <username> security set-keychain-settings -l /Users/<username>/Library/Keychains/login.keychain"
 
 	lockSleep="$(security show-keychain-info /Users/"${currentUser}"/Library/Keychains/login.keychain 2>&1 | grep -c "lock-on-sleep")"
 	if [[ "${keyTimeout}" == "1" ]]; then
@@ -1815,7 +1831,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="5.7 - Do not enable the root user account"
+audit='5.7 Do not enable the "root" account (Automated)'
 orgScore="OrgScore5_7"
 emptyVariables
 # Verify organizational score
@@ -1823,7 +1839,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /usr/bin/dscl . -create /Users/root UserShell /usr/bin/false"
+	remediate="Script > sudo dscl . -create /Users/root UserShell /usr/bin/false"
 
 	rootEnabled="$(dscl . -read /Users/root AuthenticationAuthority 2>&1 | grep -c "No such key")"
 	rootEnabledRemediate="$(dscl . -read /Users/root UserShell 2>&1 | grep -c "/usr/bin/false")"
@@ -1838,7 +1854,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="5.8 - Disable automatic login"
+audit="5.8 Disable automatic login (Automated)"
 orgScore="OrgScore5_8"
 emptyVariables
 # Verify organizational score
@@ -1872,7 +1888,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="5.9 - Require a password to wake the computer from sleep or screen saver"
+audit="5.9 Require a password to wake the computer from sleep or screen saver (Manual)"
 orgScore="OrgScore5_9"
 emptyVariables
 # Verify organizational score
@@ -1906,7 +1922,7 @@ fi
 printReport
 
 CISLevel="2"
-audit="5.10 - Ensure system is set to hibernate and Destroy FileVault Key"
+audit="5.10 Ensure system is set to hibernate (Automated)"
 orgScore="OrgScore5_10"
 emptyVariables
 # Verify organizational score
@@ -1914,7 +1930,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > pmset -a standbydelayhigh 600 && pmset -a standbydelaylow 600 && pmset -a highstandbythreshold 90 && pmset -a destroyfvkeyonstandby 1"
+	remediate="Script > sudo pmset -a standbydelayhigh 600 && sudo pmset -a standbydelaylow 600 && sudo pmset -a highstandbythreshold 90 && sudo pmset -a destroyfvkeyonstandby 1"
 
 	hibernateValue=$(pmset -g | grep standbydelaylow 2>&1 | awk '{print $2}')
 	comment="Hibernate: Enabled"
@@ -1932,7 +1948,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="5.11 - Require an administrator password to access system-wide preferences"
+audit="5.11 Require an administrator password to access system-wide preferences (Automated)"
 orgScore="OrgScore5_11"
 emptyVariables
 # Verify organizational score
@@ -1940,7 +1956,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /usr/bin/security authorizationdb read system.preferences > /tmp/system.preferences.plist && /usr/libexec/PlistBuddy -c 'Set :shared false' /tmp/system.preferences.plist && /usr/bin/security authorizationdb write system.preferences < /tmp/system.preferences.plist"
+	remediate="Script > sudo security authorizationdb read system.preferences > /tmp/system.preferences.plist && sudo defaults write /tmp/system.preferences.plist shared -bool false && sudo security authorizationdb write system.preferences < /tmp/system.preferences.plist"
 
 	adminSysPrefs="$(security authorizationdb read system.preferences 2> /dev/null | grep -A 1 "<key>shared</key>" | grep -c "<false/>")"
 	if [[ "${adminSysPrefs}" == "1" ]]; then
@@ -1955,7 +1971,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="5.12 - Disable ability to login to another user's active and locked session"
+audit="5.12 Ensure an administrator account cannot login to another user's active and locked session (Automated)"
 orgScore="OrgScore5_12"
 emptyVariables
 # Verify organizational score
@@ -1963,7 +1979,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /usr/bin/security authorizationdb write system.login.screensaver 'use-login-window-ui'"
+	remediate="Script > sudo security authorizationdb write system.login.screensaver 'use-login-window-ui'"
 
 	screensaverRules="$(security authorizationdb read system.login.screensaver 2>&1 | grep -c 'use-login-window-ui')"
 	if [[ "${screensaverRules}" == "1" ]]; then
@@ -1978,7 +1994,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="5.13 - Create a custom message for the Login Screen"
+audit="5.13 Create a custom message for the Login Screen (Automated)"
 orgScore="OrgScore5_13"
 emptyVariables
 # Verify organizational score
@@ -2008,7 +2024,7 @@ fi
 printReport
 
 CISLevel="2"
-audit="5.14 - Create a Login window banner"
+audit="5.14 Create a Login window banner (Automated)"
 orgScore="OrgScore5_14"
 emptyVariables
 # Verify organizational score
@@ -2030,7 +2046,7 @@ fi
 printReport
 
 CISLevel="2"
-audit="5.16 - Disable Fast User Switching (Not Scored)"
+audit="5.16 Disable Fast User Switching (Manual)"
 orgScore="OrgScore5_16"
 emptyVariables
 # Verify organizational score
@@ -2060,15 +2076,15 @@ fi
 printReport
 
 CISLevel="2"
-audit="5.19 - System Integrity Protection status"
-orgScore="OrgScore5_19"
+audit="5.18 System Integrity Protection status (Automated)"
+orgScore="OrgScore5_18"
 emptyVariables
 # Verify organizational score
 runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > /usr/bin/csrutil enable"
+	remediate="Script > sudo /usr/bin/csrutil enable"
 
 	sipEnabled="$(csrutil status 2>&1 | awk '{print $5}')"
 	if [[ "${sipEnabled}" == "enabled." ]]; then
@@ -2088,7 +2104,7 @@ printReport
 #printChapter "User Accounts and Environment"
 
 CISLevel="1"
-audit="6.1.1 - Display login window as name and password"
+audit="6.1.1 Display login window as name and password (Automated)"
 orgScore="OrgScore6_1_1"
 emptyVariables
 # Verify organizational score
@@ -2118,7 +2134,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="6.1.2 - Disable Show password hints"
+audit='6.1.2 Disable "Show password hints" (Automated)'
 orgScore="OrgScore6_1_2"
 emptyVariables
 # Verify organizational score
@@ -2148,7 +2164,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="6.1.3 - Disable guest account"
+audit="6.1.3 Disable guest account login (Automated)"
 orgScore="OrgScore6_1_3"
 emptyVariables
 # Verify organizational score
@@ -2178,7 +2194,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="6.1.4 - Disable Allow guests to connect to shared folders"
+audit='6.1.4 Disable "Allow guests to connect to shared folders" (Automated)'
 orgScore="OrgScore6_1_4"
 emptyVariables
 # Verify organizational score
@@ -2200,7 +2216,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="6.1.5 - Remove Guest home folder"
+audit="6.1.5 Remove Guest home folder (Automated)"
 orgScore="OrgScore6_1_5"
 emptyVariables
 # Verify organizational score
@@ -2208,7 +2224,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > rm -rf /Users/Guest"
+	remediate="Script > sudo rm -rf /Users/Guest"
 
 	guestHomeFolder="$(ls /Users/ 2>&1 | grep -c Guest)"
 	if [[ "${guestHomeFolder}" == "0" ]]; then
@@ -2222,7 +2238,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="6.2 - Turn on filename extensions"
+audit="6.2 Turn on filename extensions (Automated)"
 orgScore="OrgScore6_2"
 emptyVariables
 # Verify organizational score
@@ -2252,7 +2268,7 @@ fi
 printReport
 
 CISLevel="1"
-audit="6.3 - Disable the automatic run of safe files in Safari"
+audit="6.3 Disable the automatic run of safe files in Safari (Automated)"
 orgScore="OrgScore6_3"
 emptyVariables
 # Verify organizational score
