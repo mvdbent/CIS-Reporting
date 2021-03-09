@@ -1029,10 +1029,10 @@ if [[ "${auditResult}" == "1" ]]; then
 	appsInbound=$(/usr/libexec/ApplicationFirewall/socketfilterfw --listapps | grep ALF | awk '{print $7}')
 	if [[ "${appsInbound}" -le "10" || -z "${appsInbound}" ]]; then
 		result="Passed"
-		comment="Application Firewall Rules: "${appsInbound}" Application Managed"
+		comment="Application Firewall Rules: ${appsInbound} Application Managed"
 	else 
 		result="Failed"
-		comment="Application Firewall Rules: "${appsInbound}" Application Managed"
+		comment="Application Firewall Rules: ${appsInbound} Application Managed"
 	fi
 fi
 printReport
@@ -1129,7 +1129,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	value="allowApplePersonalizedAdvertising"
 	prefValueAsUser=$(getPrefValuerunAsUser "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
-	comment="Limited Ad Tracking: Disbled"
+	comment="Limited Ad Tracking: Disabled"
 	if [[ "${prefIsManaged}" == "True" && "${prefValueAsUser}" == "False" ]]; then
 		result="Passed"
 	else
@@ -1290,7 +1290,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	
 	tmDestination=$(tmutil destinationinfo | grep -i NAME | awk '{print $2}')
 	tmDrives=$(tmutil destinationinfo | grep -c "NAME")
-	tmVolumeEncrypted=$(diskutil info ${tmDestination} 2>&1 | grep -c "Encrypted: Yes")
+	tmVolumeEncrypted=$(diskutil info "${tmDestination}" 2>&1 | grep -c "Encrypted: Yes")
 	if [[ "${tmDrives}" -gt "0" && "${tmVolumeEncrypted}" -gt "0" ]]; then
 		result="Passed"
 		comment="Time Machine Volumes: Encrypted"
@@ -1527,7 +1527,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	remediate="Script > sudo chown -R root $(/usr/bin/grep '^dir' /etc/security/audit_control | /usr/bin/awk -F: '{print $2}')"
 
 	controlAccess=$(grep '^dir' /etc/security/audit_control | awk -F: '{print $2}')
-	accessCheck=$(ls -n ${controlAccess} | awk '{s+=$3} END {print s}')
+	accessCheck=$(find "${controlAccess}" | awk '{s+=$3} END {print s}')
 	if [[ "${accessCheck}" == "0" ]]; then
 		result="Passed"
 		comment="Control access to audit records: Correct ownership"
@@ -1716,7 +1716,7 @@ if [[ "${auditResult}" == "1" ]]; then
 		comment="All System Wide Applications have appropriate permissions"
 	else 
 		result="Failed"
-		comment="Check permissions of "${appPermissions}" system wide Applications"
+		comment="Check permissions of ${appPermissions} system wide Applications"
 	fi
 fi
 printReport
@@ -1738,7 +1738,7 @@ if [[ "${auditResult}" == "1" ]]; then
 		comment="All System folder for world are not writable files"
 	else 
 		result="Failed"
-		comment="Check "${sysPermissions}" System folder for world writable files"
+		comment="Check ${sysPermissions} System folder for world writable files"
 	fi
 fi
 printReport
@@ -1760,7 +1760,7 @@ if [[ "${auditResult}" == "1" ]]; then
 		comment="All Library folder for world are not writable files"
 	else 
 		result="Failed"
-		comment="Check "${libPermissions}" Library folders for world writable files"
+		comment="Check ${libPermissions} Library folders for world writable files"
 	fi
 fi
 printReport
@@ -1779,7 +1779,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	sudoTimeout="$(ls /etc/sudoers.d/ 2>&1 | grep -c timestamp )"
 	if [[ "${sudoTimeout}" != "0" ]]; then
 		result="Passed"
-		comment="The sudo timeout period is reduced: "${sudoTimeout}""
+		comment="The sudo timeout period is reduced: ${sudoTimeout}"
 	else 
 		result="Failed"
 		comment="Reduce the sudo timeout period"
@@ -1843,7 +1843,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	remediate="Script > sudo -u <username> security set-keychain-settings -l /Users/<username>/Library/Keychains/login.keychain"
 
 	lockSleep="$(security show-keychain-info /Users/"${currentUser}"/Library/Keychains/login.keychain 2>&1 | grep -c "lock-on-sleep")"
-	if [[ "${keyTimeout}" == "1" ]]; then
+	if [[ "${lockSleep}" == "1" ]]; then
 		result="Passed"
 		comment="Login keychain is locked when the computer sleeps: Enabled"
 	else 
@@ -1956,6 +1956,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	remediate="Script > sudo pmset -a standbydelayhigh 600 && sudo pmset -a standbydelaylow 600 && sudo pmset -a highstandbythreshold 90 && sudo pmset -a destroyfvkeyonstandby 1"
 
 	hibernateValue=$(pmset -g | grep standbydelaylow 2>&1 | awk '{print $2}')
+	macType=$(system_profiler SPHardwareDataType 2>&1 | grep -c MacBook)
 	comment="Hibernate: Enabled"
 	if [[ "$macType" -ge 0 ]]; then
 		if [[ "$hibernateValue" == "" ]] || [[ "$hibernateValue" -gt 600 ]]; then
@@ -2057,7 +2058,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
 	remediate="https://support.apple.com/en-us/HT202277"
 
-	policyBanner="$(ls -ld /Library/Security/PolicyBanner.rtf* 2>&1 | wc -l | tr -d ' ')"
+	policyBanner="$(find /Library/Security/PolicyBanner.rtf* 2>&1 | wc -l | tr -d ' ')"
 	if [[ "${policyBanner}" == "1" ]]; then
 		result="Passed"
 		comment="Login window banner: Enabled"
