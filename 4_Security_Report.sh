@@ -97,10 +97,6 @@ function CISBenchmarkReportFile () {
 	fi
 }
 
-function printChapter(){
-	echo "$1">>"${CISBenchmarkReport}"
-}
-
 function printReport(){
 	echo "${audit};${CISLevel};${scored};${result};${prefIsManaged};${appidentifier};${value};${prefValue};${method};${comment};${remediate}">>"${CISBenchmarkReport}"
 }
@@ -523,7 +519,8 @@ emptyVariables
 runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
-	method="Profile"
+	method="Manual"
+	remediate="Familiarise users with screen lock tools or corner to Start Screen Saver"
 	
 	appidentifier="com.apple.dock"
 	value="wvous-bl-corner"
@@ -728,8 +725,8 @@ if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
 	remediate="Script > sudo launchctl disable system/com.apple.smbd"
 
-	smbEnabled=$(launchctl print-disabled system | grep -c '"com.apple.smbd" => true')
-	if [[ "${smbEnabled}" == "1" ]]; then
+	smbEnabled=$(launchctl print-disabled system | grep -c '"com.apple.smbd" => false')
+	if [[ "${smbEnabled}" == "0" ]]; then
 		result="Passed"
 		comment="File Sharing: Disabled"
 	else
@@ -1046,9 +1043,9 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.locationd.plist"
+	remediate="Script > sudo /usr/bin/defaults write /var/db/locationd/Library/Preferences/ByHost/com.apple.locationd LocationServicesEnabled -bool false; /bin/launchctl kickstart -k system/com.apple.locationd"
 	
-	locationServices=$(launchctl print-disabled system 2>&1 | grep -c '"com.apple.locationd" => true')
+	locationServices=$(defaults read /var/db/locationd/Library/Preferences/ByHost/com.apple.locationd.plist LocationServicesEnabled 2>&1)
 	if [[ "${locationServices}" != "0" ]]; then
 		result="Passed"
 		comment="Location Services: Enabled"
@@ -1072,7 +1069,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	
 	locationServices=$(defaults read /var/db/locationd/clients.plist 2>&1 | grep -c "Authorized")
 	if [[ "${locationServices}" != "0" ]]; then
-		result="Failed"
+		result="Notice"
 		comment="${locationServices} applications can accessing location services"
 	else 
 		result="Passed"
@@ -1314,25 +1311,16 @@ emptyVariables
 runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
-	method="Profile/Script"
-	remediate="Configuration profile - Energy Saver > 'Desktop', 'Portable - Battery' and 'Portable - Power Adapter'. Disable Power Nap - Script > sudo /usr/bin/pmset -a womp 0"
+	method="Script"
+	remediate="Script > sudo /usr/bin/pmset -a womp 0"
 	
-	appidentifier="com.apple.PowerManagement"
-	value="AC Power"
-	nestedValue="Wake On LAN"
-	prefValue=$(getPrefValueNested "${appidentifier}" "${value}" "${nestedValue}")
-	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
-	comment="Wake for network access: Disabled"
 	wakeNetwork=$(pmset -g | awk '/womp/ { sum+=$2 } END {print sum}')
-	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "0" && "${wakeNetwork}" == "0" ]]; then
+	if [[ "${wakeNetwork}" == "0" ]]; then
 		result="Passed"
+		comment="Wake for network access: Disabled"
 	else
-		if [[ "${prefValue}" == "0" && "${wakeNetwork}" == "0"  ]]; then
-			result="Passed"
-		else
-			result="Failed"
-			comment="Wake for network access: Enabled"
-		fi
+		result="Failed"
+		comment="Wake for network access: Enabled"
 	fi
 fi
 printReport
@@ -1403,8 +1391,8 @@ if [[ "${auditResult}" == "1" ]]; then
 		result="Not applicable"
 		comment="EFI Firmware Integrity is not supported by this Mac. T2 Chip found."
 	else
-		method="Script"
-		remediate="Script > sudo /usr/libexec/firmwarecheckers/eficheck/eficheck --integrity-check"
+		method="Manual"
+		remediate="If EFI does not pass the integrity check you may send a report to Apple. Backing up files and clean installing a known good Operating System and Firmware is recommended."
 		efiStatus=$(/usr/libexec/firmwarecheckers/eficheck/eficheck --integrity-check | grep -c "No changes detected")
 		if [[ "${efiStatus}" -gt 0 ]]; then
 			result="Passed"
@@ -1777,7 +1765,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	remediate="Script > add 'Defaults timestamp_timeout=0' to /etc/sudoers"
 
 	sudoTimeout="$(ls /etc/sudoers.d/ 2>&1 | grep -c timestamp )"
-	if [[ "${sudoTimeout}" != "0" ]]; then
+	if [[ "${sudoTimeout}" == "0" ]]; then
 		result="Passed"
 		comment="The sudo timeout period is reduced: ${sudoTimeout}"
 	else 
@@ -1919,9 +1907,9 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Profile"
-	remediate="Configuration profile - payload > com.apple.screensaver > askForPassword=true > askForPassword=0"
+	remediate="Configuration profile - payload > com.apple.screensaver > askForPassword=true"
 
-	appidentifier="com.apple.loginwindow"
+	appidentifier="com.apple.screensaver"
 	value="askForPassword"
 	prefValueAsUser=$(getPrefValuerunAsUser "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
@@ -2228,7 +2216,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	method="Profile"
 	remediate="Configuration profile - payload > com.apple.smb.server AllowGuestAccess=false"
 
-	smbGuestEnabled="$(defaults read /Library/Preferences/SystemConfiguration/com.apple.smb.server AllowGuestAccess)"
+	smbGuestEnabled="$(defaults read /Library/Preferences/SystemConfiguration/com.apple.smb.server AllowGuestAccess 2>&1)"
 	if [[ "${smbGuestEnabled}" == "0" ]]; then
 		result="Passed"
 		comment="Allow guests to connect to shared folders: Disabled"
