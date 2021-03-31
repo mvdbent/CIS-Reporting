@@ -393,8 +393,8 @@ if [[ "${auditResult}" == "1" ]]; then
 	method="Profile"
 	remediate="Configuration profile - payload > com.apple.timed > TMAutomaticTimeOnlyEnabled=true"
 
-	appidentifier="time.apple.com"
-	value="timeServer"
+	appidentifier="com.apple.timed"
+	value="TMAutomaticTimeOnlyEnabled"
 	prefValue=$(getPrefValue "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
 	comment="Time and date automatically: Enabled"
@@ -1483,6 +1483,7 @@ printReport
 
 CISLevel="1"
 audit="3.4 Ensure security auditing retention (Automated)"
+orgScore="OrgScore3_4"
 orgScore="OrgScore3_4"
 emptyVariables
 # Verify organizational score
