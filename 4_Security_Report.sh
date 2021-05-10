@@ -1043,7 +1043,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > sudo /usr/bin/defaults write /var/db/locationd/Library/Preferences/ByHost/com.apple.locationd LocationServicesEnabled -bool false; /bin/launchctl kickstart -k system/com.apple.locationd"
+	remediate="Script > sudo /usr/bin/defaults write /var/db/locationd/Library/Preferences/ByHost/com.apple.locationd LocationServicesEnabled -bool true; sudo /bin/launchctl kickstart -k system/com.apple.locationd"
 	
 	locationServices=$(defaults read /var/db/locationd/Library/Preferences/ByHost/com.apple.locationd.plist LocationServicesEnabled 2>&1)
 	if [[ "${locationServices}" != "0" ]]; then
@@ -1763,7 +1763,7 @@ emptyVariables
 runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
-	remediate="Script > add 'Defaults timestamp_timeout=0' to /etc/sudoers"
+	remediate='Script > echo "Defaults timestamp_timeout=0" >> /etc/sudoers'
 
 	sudoTimeout="$(ls /etc/sudoers.d/ 2>&1 | grep -c timestamp )"
 	if [[ "${sudoTimeout}" == "0" ]]; then
