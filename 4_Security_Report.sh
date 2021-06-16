@@ -88,6 +88,10 @@ function getPrefIsManaged { # $1: domain, $2: key
 	python -c "from Foundation import CFPreferencesAppValueIsForced; print(CFPreferencesAppValueIsForced('$2', '$1'))"
 }
 
+function getPrefIsManagedrunAsUser { # $1: domain, $2: key
+	runAsUser python -c "from Foundation import CFPreferencesAppValueIsForced; print(CFPreferencesAppValueIsForced('$2', '$1'))"
+}
+
 ### Functions
 function CISBenchmarkReportFile () {
 	CISBenchmarkReportPath=${projectfolder}/Reports
@@ -488,9 +492,12 @@ if [[ "${auditResult}" == "1" ]]; then
 	prefValue2AsUser=$(getPrefValuerunAsUser "${appidentifier}" "${value2}")
 	prefValue3AsUser=$(getPrefValuerunAsUser "${appidentifier}" "${value3}")
 	prefValue4AsUser=$(getPrefValuerunAsUser "${appidentifier}" "${value4}")
-	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
+	prefIsManaged=$(getPrefIsManagedrunAsUser "${appidentifier}" "${value}")
+	prefIsManaged2=$(getPrefIsManagedrunAsUser "${appidentifier}" "${value2}")
+	prefIsManaged3=$(getPrefIsManagedrunAsUser "${appidentifier}" "${value3}")
+	prefIsManaged4=$(getPrefIsManagedrunAsUser "${appidentifier}" "${value4}")
 	comment="Secure screen saver corners: enabled"
-	if [[ "${prefIsManaged}" == "True" ]]; then
+	if [[ "${prefIsManaged}" == "True" ]] || [[ "${prefIsManaged2}" == "True" ]] || [[ "${prefIsManaged3}" == "True" ]] || [[ "${prefIsManaged4}" == "True" ]]; then
 		result="Passed"
 	else
 		if [[ "${prefValueAsUser}" == "5" ]] || [[ "${prefValue2AsUser}" == "5" ]] || [[ "${prefValue3AsUser}" == "5" ]] || [[ "${prefValue4AsUser}" == "5" ]]; then
@@ -704,7 +711,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	if [[ "${prefIsManaged}" == "True" && "${prefValueAsUser}" == "False" ]]; then
 		result="Passed"
 	else
-		if [[ "${prefValue}" == "False" || "${prefValueAsUser}" == "None" ]]; then
+		if [[ "${prefValueAsUser}" == "False" ]]; then
 			result="Passed"
 		else
 			result="Failed"
@@ -804,20 +811,22 @@ if [[ "${auditResult}" == "1" ]]; then
 	method="Profile"
 	remediate="Configuration profile - payload > com.apple.preferences.sharing.SharingPrefsExtension > homeSharingUIStatus=0 > legacySharingUIStatus=0 > mediaSharingUIStatus=0"
 
-	appidentifier="com.apple.amp.mediasharingd.plist"
-	value="home-sharing-enabled"
-	value2="public-sharing-enabled"
+	appidentifier="com.apple.preferences.sharing.SharingPrefsExtension"
+	value="homeSharingUIStatus"
+	value2="legacySharingUIStatus"
+	value3="mediaSharingUIStatus"
 	prefValueAsUser=$(getPrefValuerunAsUser "${appidentifier}" "${value}")
 	prefValue2AsUser=$(getPrefValuerunAsUser "${appidentifier}" "${value2}")
+	prefValue3AsUser=$(getPrefValuerunAsUser "${appidentifier}" "${value3}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
 	comment="Media Sharing: Disabled"
-	if [[ "${prefIsManaged}" == "True" && "${prefValueAsUser}" == "0" ]] && [[ "${prefValue2AsUser}" == "0" ]]; then
+	if [[ "${prefIsManaged}" == "True" && "${prefValueAsUser}" == "0" ]] && [[ "${prefValue2AsUser}" == "0" ]] && [[ "${prefValue3AsUser}" == "0" ]]; then
 		result="Passed"
 	else 
-		if [[ "${prefValueAsUser}" == "0" ]] && [[ "${prefValue2AsUser}" == "0" ]]; then
+		if [[ "${prefValueAsUser}" == "0" ]] && [[ "${prefValue2AsUser}" == "0" ]] && [[ "${prefValue3AsUser}" == "0" ]]; then
 			result="Passed"
 		elif
-			[[ "${prefValueAsUser}" == "" ]] && [[ "${prefValue2AsUser}" == "" ]]; then
+			[[ "${prefValueAsUser}" == "" ]] && [[ "${prefValue2AsUser}" == "" ]] && [[ "${prefValue3AsUser}" == "" ]]; then
 				result="Passed"
 			else
 				result="Failed"
@@ -825,8 +834,8 @@ if [[ "${auditResult}" == "1" ]]; then
 			fi
 	fi
 fi
-value="${value}, ${value2}"
-prefValue="${prefValueAsUser}, ${prefValue2AsUser}"
+value="${value}, ${value2}, ${value3}"
+prefValue="${prefValueAsUser}, ${prefValue2AsUser}, ${prefValue3AsUser}"
 printReport 
 
 CISLevel="1"
@@ -938,7 +947,7 @@ if [[ "${auditResult}" == "1" ]]; then
 		if [[ "${prefValue}" == "1" ]]; then
 			result="Passed"
 		else
-			gatekeeperEnabled=$(spctl --status | grep -c "assessments enabled")
+			gatekeeperEnabled=$(spctl --status 2>&1 | grep -c "assessments enabled")
 			if [[ "$gatekeeperEnabled" = "1" ]]; then
 				result="Passed"
 			else
@@ -961,12 +970,12 @@ if [[ "${auditResult}" == "1" ]]; then
 	method="Profile"
 	remediate="Configuration profile - payload > com.apple.security.firewall > EnableFirewall=true"
 
-	appidentifier="com.apple.alf"
-	value="globalstate"
+	appidentifier="com.apple.security.firewall"
+	value="EnableFirewall"
 	prefValue=$(getPrefValue "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
 	comment="Firewall: Enabled"
-	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "1" ]]; then
+	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "True" ]]; then
 		result="Passed"
 	else
 		if [[ "${prefValue}" == "1" ]]; then
@@ -990,7 +999,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	remediate="Configuration profile - payload > com.apple.security.firewall > EnableStealthMode=true"
 
 	appidentifier="com.apple.security.Firewall"
-	value="globalstate"
+	value="EnableStealthMode"
 	prefValue=$(getPrefValue "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
 	comment="Firewall Stealth Mode: Enabled"
@@ -1043,7 +1052,7 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Script"
-	remediate="Script > sudo /usr/bin/defaults write /var/db/locationd/Library/Preferences/ByHost/com.apple.locationd LocationServicesEnabled -bool true; sudo /bin/launchctl kickstart -k system/com.apple.locationd"
+	remediate="Script > sudo /usr/bin/defaults write /var/db/locationd/Library/Preferences/ByHost/com.apple.locationd LocationServicesEnabled -bool true && sudo /bin/launchctl kickstart -k system/com.apple.locationd"
 	
 	locationServices=$(defaults read /var/db/locationd/Library/Preferences/ByHost/com.apple.locationd.plist LocationServicesEnabled 2>&1)
 	if [[ "${locationServices}" != "0" ]]; then
@@ -1364,10 +1373,10 @@ if [[ "${auditResult}" == "1" ]]; then
 	prefValue=$(getPrefValue "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
 	comment="Secure Keyboard Entry in terminal.app: Enabled"
-	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "true" ]]; then
+	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "True" ]]; then
 		result="Passed"
 	else
-		if [[ "${prefValue}" == "true" ]]; then
+		if [[ "${prefValue}" == "True" ]]; then
 			result="Passed"
 		else
 			result="Failed"
@@ -1387,7 +1396,7 @@ runAudit
 if [[ "${auditResult}" == "1" ]]; then
 	# Check for T2 chip.  
 	securityChip=$(system_profiler SPiBridgeDataType 2>&1 | grep 'Model Name:' | grep -c 'T2')
-	if [[ "${securityChip}" == "1" ]]; then
+	if [[ "${securityChip}" == "0" ]]; then
 		result="Not applicable"
 		comment="EFI Firmware Integrity is not supported by this Mac. T2 Chip found."
 	else
@@ -1571,10 +1580,10 @@ if [[ "${auditResult}" == "1" ]]; then
 	prefValue=$(getPrefValue "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
 	comment="Bonjour advertising service: Disable"
-	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "true" ]]; then
+	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "True" ]]; then
 		result="Passed"
 	else
-		if [[ "${prefValue}" == "true" ]]; then
+		if [[ "${prefValue}" == "True" ]]; then
 			result="Passed"
 		else
 			result="Failed"
@@ -1628,7 +1637,7 @@ if [[ "${auditResult}" == "1" ]]; then
 
 	httpServer=$(launchctl print-disabled system 2>&1 | grep -c '"org.apache.httpd" => true')
 #	httpServer=$(launchctl list 2>&1 | grep -c httpd)
-	if [[ "${httpServer}" == "0" ]]; then
+	if [[ "${httpServer}" == "1" ]]; then
 		result="Passed"
 		comment="HTTP server service: Disabled"
 	else 
@@ -1650,7 +1659,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	remediate="Script > sudo launchctl disable system/com.apple.nfsd && sudo rm /etc/exports"
 
 	httpServer=$(launchctl print-disabled system 2>&1 | grep -c '"com.apple.nfsd" => true')
-	if [[ "${httpServer}" == "0" ]]; then
+	if [[ "${httpServer}" == "1" ]]; then
 		result="Passed"
 		comment="NFS server service: Disabled"
 	else 
@@ -2185,17 +2194,17 @@ runAudit
 # If organizational score is 1 or true, check status of client
 if [[ "${auditResult}" == "1" ]]; then
 	method="Profile"
-	remediate="Configuration profile - payload > com.apple.loginwindow > GuestEnabled=False"
+	remediate="Configuration profile - payload > com.apple.MCX > DisableGuestAccount=True"
 
-	appidentifier="com.apple.loginwindow"
-	value="GuestEnabled"
+	appidentifier="com.apple.MCX"
+	value="DisableGuestAccount"
 	prefValue=$(getPrefValuerunAsUser "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
 	comment="Guest account: Disabled"
-	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "False" ]]; then
+	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "True" ]]; then
 		result="Passed"
 	else
-		if [[ "${prefValue}" == "False" ]]
+		if [[ "${prefValue}" == "True" ]]
 		then
 			result="Passed"
 		else
@@ -2216,16 +2225,25 @@ runAudit
 if [[ "${auditResult}" == "1" ]]; then
 	method="Profile"
 	remediate="Configuration profile - payload > com.apple.smb.server AllowGuestAccess=false"
-
-	smbGuestEnabled="$(defaults read /Library/Preferences/SystemConfiguration/com.apple.smb.server AllowGuestAccess 2>&1)"
-	if [[ "${smbGuestEnabled}" == "0" ]]; then
+	
+	appidentifier="com.apple.smb.server"
+	value="AllowGuestAccess"
+	prefValue=$(getPrefValue "${appidentifier}" "${value}")
+	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
+	comment="Allow guests to connect to shared folders: Disabled"
+	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "False" ]]; then
 		result="Passed"
-		comment="Allow guests to connect to shared folders: Disabled"
-	else 
-		result="Failed"
-		comment="Allow guests to connect to shared folders: Enabled"
+	else
+		if [[ "${prefValue}" == "False" ]]
+		then
+			result="Passed"
+		else
+			result="Failed"
+			comment="Allow guests to connect to shared folders: Enabled"
+		fi
 	fi
 fi
+
 printReport
 
 CISLevel="1"
@@ -2261,7 +2279,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	method="Profile"
 	remediate="Configuration profile - payload > .GlobalPreferences > AppleShowAllExtensions=true"
 
-	appidentifier=".GlobalPreferences"
+	appidentifier="com.apple.GlobalPreferences"
 	value="AppleShowAllExtensions"
 	prefValue=$(getPrefValuerunAsUser "${appidentifier}" "${value}")
 	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
@@ -2294,7 +2312,7 @@ if [[ "${auditResult}" == "1" ]]; then
 	appidentifier="com.apple.Safari"
 	value="AutoOpenSafeDownloads"
 	prefValue=$(getPrefValuerunAsUser "${appidentifier}" "${value}")
-	prefIsManaged=$(getPrefIsManaged "${appidentifier}" "${value}")
+	prefIsManaged=$(getPrefIsManagedrunAsUser "${appidentifier}" "${value}")
 	comment="Automatic run of safe files in Safari: Disabled"
 	if [[ "${prefIsManaged}" == "True" && "${prefValue}" == "False" ]]; then
 		result="Passed"
